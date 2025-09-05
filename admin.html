@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gestione Terzisti - Admin</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+<nav class="navbar navbar-dark bg-dark fixed-top">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="index.html">⬅ Torna a Utente</a>
+    <span class="navbar-text text-white">Pannello Admin</span>
+  </div>
+</nav>
+
+<div class="container mt-5 pt-4">
+  <h2>Gestione Terzisti</h2>
+  <div id="alert-container"></div>
+  <form id="formAdmin" class="input-group mb-3">
+    <input type="text" id="newTerzista" class="form-control" placeholder="Nome terzista">
+    <button class="btn btn-success">Aggiungi</button>
+  </form>
+  <ul id="listTerzisti" class="list-group"></ul>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
+import { getDatabase, ref, get, set, remove } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
+
+// 🔹 Config Firebase
+const firebaseConfig = {
+  apiKey: "TUO_API_KEY",
+  authDomain: "terzisti-2a23f.firebaseapp.com",
+  databaseURL: "https://terzisti-2a23f-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "terzisti-2a23f",
+  storageBucket: "terzisti-2a23f.firebasestorage.app",
+  messagingSenderId: "304632997223",
+  appId: "1:304632997223:web:0741bb6a9e643d8bacfbc2"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const listRef = ref(db, "terzistiList");
+
+function showAlert(msg, type="success") {
+  const c = document.getElementById("alert-container");
+  c.innerHTML = `<div class="alert alert-${type} alert-dismissible fade show">${msg}
+  <button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>`;
+}
+
+// 🔹 Carica lista
+async function loadList() {
+  const snap = await get(listRef);
+  const ul = document.getElementById("listTerzisti");
+  ul.innerHTML = "";
+  if (snap.exists()) {
+    Object.keys(snap.val()).forEach(t => {
+      ul.innerHTML += `<li class="list-group-item d-flex justify-content-between align-items-center">
+        ${t} 
+        <button class="btn btn-sm btn-danger" onclick="deleteTerzista('${t}')">🗑 Rimuovi</button>
+      </li>`;
+    });
+  }
+}
+
+// 🔹 Aggiungi terzista
+document.getElementById("formAdmin").addEventListener("submit", async e => {
+  e.preventDefault();
+  const name = document.getElementById("newTerzista").value.trim();
+  if (!name) return;
+  await set(ref(db, `terzistiList/${name}`), true);
+  showAlert("Terzista aggiunto con successo!");
+  e.target.reset();
+  loadList();
+});
+
+// 🔹 Elimina terzista
+window.deleteTerzista = async (name) => {
+  if (confirm(`⚠ Vuoi davvero eliminare il terzista "${name}"?`)) {
+    await remove(ref(db, `terzistiList/${name}`));
+    showAlert(`Terzista "${name}" eliminato!`, "warning");
+    loadList();
+  }
+};
+
+loadList();
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
