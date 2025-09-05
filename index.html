@@ -4,9 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Gestione Terzisti - Utente</title>
-  <link rel="icon" type="image/jpeg" href="favicon.jpg">
-
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="icon" type="image/jpeg" href="favicon.jpg">
   <style>
     .empty-placeholder {
       text-align: center;
@@ -48,7 +47,7 @@
       </div>
       <div class="modal-body">
         <form id="dataForm">
-          <!-- Campo Terzista con ricerca integrata -->
+          <!-- Terzista con ricerca integrata -->
           <div class="mb-3">
             <label class="form-label">Terzista</label>
             <div class="input-group">
@@ -56,10 +55,13 @@
               <select id="terzista" class="form-select" required size="1"></select>
             </div>
           </div>
+
           <div class="mb-3"><input type="number" id="odl" class="form-control" placeholder="ODL" required></div>
           <div class="mb-3"><input type="number" id="pezzi" class="form-control" placeholder="Pezzi" required></div>
           <div class="mb-3"><input type="number" id="gabbie" class="form-control" placeholder="Gabbie" required></div>
-          <div class="mb-3"><textarea id="descrizione" class="form-control" placeholder="Descrizione" required></textarea></div>
+          <div class="mb-3">
+            <textarea id="descrizione" class="form-control" placeholder="Descrizione" required></textarea>
+          </div>
           <div class="mb-3"><input type="date" id="dataInserimento" class="form-control" required></div>
           <div class="mb-3">
             <label class="form-label">Stato</label>
@@ -95,7 +97,7 @@ const db = getDatabase(app);
 const terzistiListRef = ref(db, "terzistiList");
 const datiRef = ref(db, "terzisti");
 
-// 🔹 Utility Alert
+// 🔹 Utility alert
 function showAlert(msg, type="success") {
   const c = document.getElementById("alert-container");
   c.innerHTML = `<div class="alert alert-${type} alert-dismissible fade show">${msg}
@@ -114,14 +116,22 @@ async function loadTerzisti() {
   }
 }
 
-// 🔹 Barra di ricerca terzisti integrata
-document.getElementById("searchTerzista").addEventListener("input", function() {
+// 🔹 Barra di ricerca integrata
+const searchInput = document.getElementById("searchTerzista");
+const terzistaSelect = document.getElementById("terzista");
+
+searchInput.addEventListener("input", function() {
   const filter = this.value.toLowerCase();
-  const sel = document.getElementById("terzista");
-  for (let i = 0; i < sel.options.length; i++) {
-    const txt = sel.options[i].text.toLowerCase();
-    sel.options[i].style.display = txt.includes(filter) ? "" : "none";
+  for (let i = 0; i < terzistaSelect.options.length; i++) {
+    const txt = terzistaSelect.options[i].text.toLowerCase();
+    terzistaSelect.options[i].style.display = txt.includes(filter) ? "" : "none";
   }
+});
+
+// Quando selezioni un terzista, aggiorna la barra di ricerca
+terzistaSelect.addEventListener("change", function() {
+  const selectedText = terzistaSelect.options[terzistaSelect.selectedIndex].text;
+  searchInput.value = selectedText;
 });
 
 // 🔹 Carica dati in tabelle
@@ -197,7 +207,7 @@ document.getElementById("dataForm").addEventListener("submit", async e => {
   loadTables();
 });
 
-// 🔹 Imposta data default = oggi
+// 🔹 Imposta data di default oggi
 function setDefaultDate() {
   const today = new Date().toISOString().split("T")[0];
   document.getElementById("dataInserimento").value = today;
