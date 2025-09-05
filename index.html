@@ -52,17 +52,18 @@
             <label class="form-label">Terzista</label>
             <div class="input-group">
               <input type="text" id="searchTerzista" class="form-control" placeholder="Cerca terzista...">
-              <select id="terzista" class="form-select" required size="1"></select>
+              <select id="terzista" class="form-select" size="1">
+                <option value="">---</option>
+              </select>
             </div>
           </div>
 
           <div class="mb-3"><input type="number" id="odl" class="form-control" placeholder="ODL" required></div>
-          <div class="mb-3"><input type="number" id="pezzi" class="form-control" placeholder="Pezzi" required></div>
-          <div class="mb-3"><input type="number" id="gabbie" class="form-control" placeholder="Gabbie" required></div>
+          <div class="mb-3"><input type="number" id="pezzi" class="form-control" placeholder="Pezzi (opzionale)"></div>
+          <div class="mb-3"><input type="number" id="gabbie" class="form-control" placeholder="Gabbie (opzionale)"></div>
           <div class="mb-3">
-            <label class="form-label">Descrizione</label>
-              <textarea id="descrizione" class="form-control" placeholder="Descrizione (opzionale)"></textarea>   
-            </div>
+            <textarea id="descrizione" class="form-control" placeholder="Descrizione (opzionale)"></textarea>
+          </div>
           <div class="mb-3"><input type="date" id="dataInserimento" class="form-control" required></div>
           <div class="mb-3">
             <label class="form-label">Stato</label>
@@ -105,11 +106,11 @@ function showAlert(msg, type="success") {
   <button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>`;
 }
 
-// 🔹 Carica lista terzisti
+// 🔹 Carica lista terzisti con prima opzione "---"
 async function loadTerzisti() {
   const snap = await get(terzistiListRef);
   const sel = document.getElementById("terzista");
-  sel.innerHTML = "";
+  sel.innerHTML = `<option value="">---</option>`; // prima opzione nulla
   if (snap.exists()) {
     Object.keys(snap.val()).forEach(t => {
       sel.innerHTML += `<option value="${t}">${t}</option>`;
@@ -129,10 +130,10 @@ searchInput.addEventListener("input", function() {
   }
 });
 
-// Quando selezioni un terzista, aggiorna la barra di ricerca
+// Aggiorna barra di ricerca solo se un terzista è selezionato
 terzistaSelect.addEventListener("change", function() {
   const selectedText = terzistaSelect.options[terzistaSelect.selectedIndex].text;
-  searchInput.value = selectedText;
+  if(selectedText !== "---") searchInput.value = selectedText;
 });
 
 // 🔹 Carica dati in tabelle
@@ -161,8 +162,8 @@ async function loadTables() {
       </tr></thead><tbody>`;
     grouped[t].forEach(r => {
       html += `<tr>
-        <td>${r.odl}</td><td>${r.pezzi}</td><td>${r.gabbie}</td>
-        <td>${r.descrizione}</td><td>${r.data}</td><td>${r.stato || "DA AUTORIZZARE"}</td>
+        <td>${r.odl}</td><td>${r.pezzi||""}</td><td>${r.gabbie||""}</td>
+        <td>${r.descrizione||""}</td><td>${r.data}</td><td>${r.stato||"DA AUTORIZZARE"}</td>
         <td><button class="btn btn-sm btn-danger" onclick="deleteRow('${r.id}')">🗑</button></td>
       </tr>`;
     });
@@ -195,9 +196,9 @@ document.getElementById("dataForm").addEventListener("submit", async e => {
   const data = {
     terzista: document.getElementById("terzista").value,
     odl: document.getElementById("odl").value,
-    pezzi: document.getElementById("pezzi").value,
-    gabbie: document.getElementById("gabbie").value,
-    descrizione: document.getElementById("descrizione").value,
+    pezzi: document.getElementById("pezzi").value || "",
+    gabbie: document.getElementById("gabbie").value || "",
+    descrizione: document.getElementById("descrizione").value || "",
     data: document.getElementById("dataInserimento").value,
     stato: document.getElementById("stato").value
   };
