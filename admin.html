@@ -1,38 +1,47 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Gestione Terzisti - Admin</title>
-  <link rel="icon" type="image/jpeg" href="favicon.jpg">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gestione Terzisti - Admin</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<style>
+html,body{height:100%;margin:0;padding:0;}
+body{display:flex;flex-direction:column;min-height:100%;}
+main{flex:1;padding:70px 20px 20px 20px;background:#f8f9fa;}
+footer{background:#1a1a1a;color:#fff;text-align:center;padding:1rem;}
+footer a{color:#ffcc00;text-decoration:none;}
+</style>
 </head>
-<body class="bg-light">
+<body>
 
 <nav class="navbar navbar-dark bg-dark fixed-top">
-  <div class="container-fluid">
+  <div class="container-fluid d-flex justify-content-between align-items-center">
     <a class="navbar-brand" href="index.html">⬅ Torna a Utente</a>
-    <span class="navbar-text text-white">Pannello Admin</span>
+    <div>
+      <button class="btn btn-success me-2" id="addTerzistaBtn">➕ Aggiungi Terzista</button>
+      <button class="btn btn-secondary" id="logoutBtnAdmin">Logout</button>
+    </div>
   </div>
 </nav>
 
-<div class="container mt-5 pt-4">
-  <h2>Gestione Terzisti</h2>
-  <div id="alert-container"></div>
-  <form id="formAdmin" class="input-group mb-3">
-    <input type="text" id="newTerzista" class="form-control" placeholder="Nome terzista">
-    <button class="btn btn-success">Aggiungi</button>
-  </form>
+<main class="container">
+  <div id="alert-container" class="mb-3"></div>
   <ul id="listTerzisti" class="list-group"></ul>
-</div>
+</main>
+
+<footer>
+  <p class="mb-0">Sito web realizzato da <a href="https://ck8lab.github.io/kevincellura/" target="_blank">CK8LAB</a></p>
+</footer>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
 import { getDatabase, ref, get, set, remove } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
 
-// 🔹 Config Firebase
+// Config Firebase
 const firebaseConfig = {
-  apiKey: "TUO_API_KEY",
+  apiKey: "AIzaSyCpMPomzyMgkmtLgfjvwA_j1zTIz-vpFKA",
   authDomain: "terzisti-2a23f.firebaseapp.com",
   databaseURL: "https://terzisti-2a23f-default-rtdb.europe-west1.firebasedatabase.app",
   projectId: "terzisti-2a23f",
@@ -43,61 +52,67 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
-const listRef = ref(db, "terzistiList");
+const auth = getAuth(app);
+const terzistiListRef = ref(db,"terzistiList");
 
-function showAlert(msg, type="success") {
-  const c = document.getElementById("alert-container");
-  c.innerHTML = `<div class="alert alert-${type} alert-dismissible fade show">${msg}
-  <button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>`;
+// Login obbligatorio
+onAuthStateChanged(auth,user=>{ if(!user) window.location.href="login.html"; });
+
+// Logout
+document.getElementById("logoutBtnAdmin").addEventListener("click",async()=>{await signOut(auth); window.location.href="login.html";});
+
+// Alert helper
+function showAlert(msg,type="success"){
+  const c=document.getElementById("alert-container");
+  c.innerHTML=`<div class="alert alert-${type} alert-dismissible fade show">${msg}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>`;
+  setTimeout(()=>{ const a=c.querySelector(".alert"); if(a) bootstrap.Alert.getOrCreateInstance(a).close(); },5000);
 }
 
-// 🔹 Carica lista
-async function loadList() {
-  const snap = await get(listRef);
-  const ul = document.getElementById("listTerzisti");
-  ul.innerHTML = "";
-  if (snap.exists()) {
-    Object.keys(snap.val()).forEach(t => {
-      ul.innerHTML += `<li class="list-group-item d-flex justify-content-between align-items-center">
-        ${t} 
-        <button class="btn btn-sm btn-danger" onclick="deleteTerzista('${t}')">🗑 Rimuovi</button>
-      </li>`;
+// Carica lista terzisti
+async function loadTerzistiList(){
+  const snap=await get(terzistiListRef);
+  const ul=document.getElementById("listTerzisti");
+  ul.innerHTML="";
+  if(!snap.exists()){ ul.innerHTML=`<li class="list-group-item text-muted">Nessun terzista presente</li>`; return; }
+  const data=snap.val();
+  Object.keys(data).sort().forEach(name=>{
+    const li=document.createElement("li");
+    li.className="list-group-item d-flex justify-content-between align-items-center";
+    li.textContent=name;
+    
+    const btnGroup=document.createElement("div");
+
+    // Delete single terzista
+    const btnDel=document.createElement("button");
+    btnDel.className="btn btn-sm btn-danger";
+    btnDel.textContent="🗑";
+    btnDel.addEventListener("click",async()=>{
+      if(confirm(`Vuoi eliminare il terzista ${name}?`)){
+        await remove(ref(db,`terzistiList/${name}`));
+        showAlert(`${name} eliminato!`,"warning");
+        loadTerzistiList();
+      }
     });
-  }
+
+    btnGroup.appendChild(btnDel);
+    li.appendChild(btnGroup);
+    ul.appendChild(li);
+  });
 }
 
-// 🔹 Aggiungi terzista con controllo duplicato
-document.getElementById("formAdmin").addEventListener("submit", async e => {
-  e.preventDefault();
-  const name = document.getElementById("newTerzista").value.trim();
-  if (!name) return;
-
-  const snap = await get(listRef);
-  const existing = snap.exists() ? Object.keys(snap.val()) : [];
-
-  if (existing.includes(name)) {
-    showAlert(`⚠ Terzista "${name}" già aggiunto!`, "danger");
-    return;
-  }
-
-  await set(ref(db, `terzistiList/${name}`), true);
-  showAlert(`Terzista "${name}" aggiunto con successo!`);
-  e.target.reset();
-  loadList();
+// Aggiungi terzista
+document.getElementById("addTerzistaBtn").addEventListener("click",async()=>{
+  const name=prompt("Inserisci nome del nuovo terzista:","").trim();
+  if(!name) return;
+  const snap=await get(ref(db,`terzistiList/${name}`));
+  if(snap.exists()){ showAlert("Terzista già esistente","danger"); return; }
+  await set(ref(db,`terzistiList/${name}`),true);
+  showAlert(`${name} aggiunto con successo!`);
+  loadTerzistiList();
 });
 
-// 🔹 Elimina terzista
-window.deleteTerzista = async (name) => {
-  if (confirm(`⚠ Vuoi davvero eliminare il terzista "${name}"?`)) {
-    await remove(ref(db, `terzistiList/${name}`));
-    showAlert(`Terzista "${name}" eliminato!`, "warning");
-    loadList();
-  }
-};
-
-loadList();
+loadTerzistiList();
 </script>
-
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
