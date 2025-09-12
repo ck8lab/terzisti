@@ -29,6 +29,7 @@ body { background-color: #f8f9fa; display: flex; justify-content: center; align-
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
+import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCpMPomzyMgkmtLgfjvwA_j1zTIz-vpFKA",
@@ -42,6 +43,15 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+const db = getDatabase(app);
+const statoRef = ref(db, "stato");
+
+// Controllo modalità offline
+get(statoRef).then(snap => {
+  if(snap.exists() && snap.val().attivita === false){
+    window.location.href = "🖕.html";
+  }
+});
 
 function showAlert(msg,type="danger"){
   const container=document.getElementById("alert-container");

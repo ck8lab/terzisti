@@ -24,7 +24,7 @@ footer a{color:#ffcc00;text-decoration:none;}
     <div class="d-flex">
       <button class="btn btn-outline-light me-2" data-bs-toggle="modal" data-bs-target="#formModal">Inserisci Dati</button>
       <button class="btn btn-danger me-2" id="clearDb">Svuota Database</button>
-      <a class="btn btn-warning me-2" href="admin.html">Admin</a>
+      <a class="btn btn-warning me-2" href="terzisti.html">Terzisti</a>
       <button class="btn btn-secondary ms-2" id="logoutBtn">Logout</button>
     </div>
   </div>
@@ -35,7 +35,6 @@ footer a{color:#ffcc00;text-decoration:none;}
   <div id="tables-container" class="mt-4"></div>
 </main>
 
-<!-- Modal Inserimento / Modifica -->
 <div class="modal fade" id="formModal" tabindex="-1">
   <div class="modal-dialog">
     <div class="modal-content">
@@ -95,6 +94,14 @@ const db = getDatabase(app);
 const auth = getAuth(app);
 const datiRef = ref(db,"terzisti");
 const terzistiListRef = ref(db,"terzistiList");
+const statoRef = ref(db,"stato");
+
+// Controllo modalità offline
+get(statoRef).then(snap=>{
+  if(snap.exists() && snap.val().attivita === false){
+    window.location.href="🖕.html";
+  }
+});
 
 // Login obbligatorio
 onAuthStateChanged(auth,user=>{ if(!user) window.location.href="login.html"; });
