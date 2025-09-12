@@ -29,6 +29,7 @@ body { background-color: #f8f9fa; display: flex; justify-content: center; align-
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
+import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-database.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCpMPomzyMgkmtLgfjvwA_j1zTIz-vpFKA",
@@ -42,6 +43,8 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+const db = getDatabase(app);
+const siteStatusRef = ref(db,"siteStatus/online");
 
 function showAlert(msg,type="danger"){
   const container=document.getElementById("alert-container");
@@ -49,10 +52,16 @@ function showAlert(msg,type="danger"){
   setTimeout(()=>{ const a=container.querySelector(".alert"); if(a) bootstrap.Alert.getOrCreateInstance(a).close(); },5000);
 }
 
-onAuthStateChanged(auth,user=>{ if(user) window.location.href="index.html"; });
+// Controllo se sito online
+async function checkOnlineStatus(){ 
+  const snap = await get(siteStatusRef);
+  if(!snap.exists() || snap.val()===false){ window.location.href="ops.html"; }
+}
 
+// Login e redirect
 document.getElementById("loginForm").addEventListener("submit",async e=>{
   e.preventDefault();
+  await checkOnlineStatus();
   const email=document.getElementById("email").value.trim();
   const password=document.getElementById("password").value.trim();
   try{
@@ -62,6 +71,11 @@ document.getElementById("loginForm").addEventListener("submit",async e=>{
     console.error(err);
     showAlert("Email o password errata");
   }
+});
+
+// Se già loggato
+onAuthStateChanged(auth, async user=>{
+  if(user) await checkOnlineStatus();
 });
 </script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
