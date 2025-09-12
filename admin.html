@@ -54,21 +54,9 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const auth = getAuth(app);
 const terzistiListRef = ref(db,"terzistiList");
-const siteStatusRef = ref(db,"siteStatus/online");
-
-// Controlla se sito online
-async function checkOnlineStatus(){
-  const snap = await get(siteStatusRef);
-  if(!snap.exists() || snap.val()===false){
-    window.location.href="ops.html";
-  }
-}
 
 // Login obbligatorio
-onAuthStateChanged(auth, async user=>{
-  if(!user) window.location.href="login.html";
-  else await checkOnlineStatus();
-});
+onAuthStateChanged(auth,user=>{ if(!user) window.location.href="login.html"; });
 
 // Logout
 document.getElementById("logoutBtnAdmin").addEventListener("click",async()=>{await signOut(auth); window.location.href="login.html";});

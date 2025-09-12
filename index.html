@@ -95,20 +95,9 @@ const db = getDatabase(app);
 const auth = getAuth(app);
 const datiRef = ref(db,"terzisti");
 const terzistiListRef = ref(db,"terzistiList");
-const siteStatusRef = ref(db,"siteStatus/online");
-
-// Controlla online
-async function checkOnlineStatus(){ 
-  const snap = await get(siteStatusRef);
-  if(!snap.exists() || snap.val()===false){ window.location.href="ops.html"; }
-}
 
 // Login obbligatorio
-onAuthStateChanged(auth, async user=>{
-  if(!user) window.location.href="login.html";
-  else await checkOnlineStatus();
-});
-
+onAuthStateChanged(auth,user=>{ if(!user) window.location.href="login.html"; });
 document.getElementById("logoutBtn").addEventListener("click",async()=>{await signOut(auth); window.location.href="login.html";});
 
 // Alert
@@ -118,7 +107,7 @@ function showAlert(msg,type="success"){
   setTimeout(()=>{ const a=c.querySelector(".alert"); if(a) bootstrap.Alert.getOrCreateInstance(a).close(); },5000);
 }
 
-// Carica terzisti select
+// Carica terzisti per select
 async function loadTerzistiSelect(){
   const snap = await get(terzistiListRef);
   const sel = document.getElementById("terzista");
@@ -128,14 +117,14 @@ async function loadTerzistiSelect(){
 
 // Carica dati tabella
 async function loadTables(){
-  const snap = await get(datiRef);
-  const div = document.getElementById("tables-container");
+  const snap=await get(datiRef);
+  const div=document.getElementById("tables-container");
   div.innerHTML="";
   if(!snap.exists()){ div.innerHTML=`<div class="empty-placeholder">Nessun dato disponibile</div>`; return; }
-  const data = snap.val();
-  const grouped = {};
+  const data=snap.val();
+  const grouped={};
   Object.keys(data).forEach(id=>{
-    const row = data[id];
+    const row=data[id];
     if(!grouped[row.terzista]) grouped[row.terzista]=[];
     grouped[row.terzista].push({...row,id});
   });
@@ -164,9 +153,9 @@ async function loadTables(){
 }
 
 window.editRow=async id=>{
-  const snap = await get(ref(db,`terzisti/${id}`));
+  const snap=await get(ref(db,`terzisti/${id}`));
   if(!snap.exists()) return;
-  const row = snap.val();
+  const row=snap.val();
   document.getElementById("modalTitle").innerText="Modifica Dati";
   document.getElementById("editingId").value=id;
   document.getElementById("terzista").value=row.terzista||"";
@@ -189,9 +178,9 @@ window.deleteRow=async id=>{
 
 window.deleteTerzista=async t=>{
   if(confirm(`⚠ Vuoi davvero eliminare tutti i dati di ${t}?`)){
-    const snap = await get(datiRef);
+    const snap=await get(datiRef);
     if(!snap.exists()) return;
-    const data = snap.val();
+    const data=snap.val();
     for(const id in data) if(data[id].terzista===t) await remove(ref(db,`terzisti/${id}`));
     showAlert(`Tutti i dati di ${t} eliminati!`,"warning");
     loadTables();
@@ -200,19 +189,19 @@ window.deleteTerzista=async t=>{
 
 document.getElementById("dataForm").addEventListener("submit",async e=>{
   e.preventDefault();
-  const id = document.getElementById("editingId").value;
-  const payload = {
-    terzista: document.getElementById("terzista").value,
-    odl: document.getElementById("odl").value,
-    pezzi: document.getElementById("pezzi").value||"",
-    gabbie: document.getElementById("gabbie").value||"",
-    descrizione: document.getElementById("descrizione").value||"",
-    stato: document.getElementById("stato").value
+  const id=document.getElementById("editingId").value;
+  const payload={
+    terzista:document.getElementById("terzista").value,
+    odl:document.getElementById("odl").value,
+    pezzi:document.getElementById("pezzi").value||"",
+    gabbie:document.getElementById("gabbie").value||"",
+    descrizione:document.getElementById("descrizione").value||"",
+    stato:document.getElementById("stato").value
   };
-  if(!payload.terzista || !payload.odl){ showAlert("Terzista e ODL obbligatori!","danger"); return; }
+  if(!payload.terzista||!payload.odl){showAlert("Terzista e ODL obbligatori!","danger"); return;}
   if(id) await set(ref(db,`terzisti/${id}`),payload), showAlert("Record aggiornato!");
   else await push(datiRef,payload), showAlert("Record aggiunto!");
-  const modal = bootstrap.Modal.getInstance(document.getElementById("formModal")); modal.hide();
+  const modal=bootstrap.Modal.getInstance(document.getElementById("formModal")); modal.hide();
   e.target.reset(); document.getElementById("editingId").value="";
   loadTables();
 });
