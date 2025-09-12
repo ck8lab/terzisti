@@ -12,11 +12,30 @@ body { display:flex; justify-content:center; align-items:center; height:100vh; b
 </style>
 </head>
 <body>
+
 <div class="container">
   <h2>Modalità Offline</h2>
   <button id="toggleBtn" class="btn btn-primary mt-3">Attiva / Disattiva Offline</button>
   <div id="statusIndicator"></div>
   <div id="alert-container" class="mt-3"></div>
+</div>
+
+<!-- Modal per inserimento codice numerico -->
+<div class="modal fade" id="codiceModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Inserisci il codice di sicurezza</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="number" id="codiceInput" class="form-control" placeholder="Numero di sicurezza">
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" id="verificaCodiceBtn">Verifica</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script type="module">
@@ -37,12 +56,14 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const statoRef = ref(db, "stato");
 
+// Funzione per alert
 function showAlert(msg,type="success"){
   const container = document.getElementById("alert-container");
   container.innerHTML = `<div class="alert alert-${type} alert-dismissible fade show">${msg}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>`;
   setTimeout(()=>{ const a=container.querySelector(".alert"); if(a) bootstrap.Alert.getOrCreateInstance(a).close(); },5000);
 }
 
+// Aggiorna indicatore stato
 function updateStatusIndicator(attivita){
   const statusEl = document.getElementById("statusIndicator");
   if(attivita){
@@ -54,26 +75,34 @@ function updateStatusIndicator(attivita){
   }
 }
 
-// Legge lo stato iniziale e aggiorna indicatore in tempo reale
+// Legge stato iniziale e aggiorna in tempo reale
 onValue(statoRef, (snap)=>{
   if(snap.exists()){
     updateStatusIndicator(snap.val().attivita);
   }
 });
 
-document.getElementById("toggleBtn").addEventListener("click", async () => {
-  const codiceInserito = prompt("Inserisci codice di sicurezza:");
+// Mostra modal numerico al click
+document.getElementById("toggleBtn").addEventListener("click", () => {
+  const modal = new bootstrap.Modal(document.getElementById("codiceModal"));
+  modal.show();
+});
+
+// Verifica codice e toggle offline
+document.getElementById("verificaCodiceBtn").addEventListener("click", async () => {
+  const codiceInserito = Number(document.getElementById("codiceInput").value);
   if(!codiceInserito) return;
 
   const snap = await get(statoRef);
   if(!snap.exists()){ showAlert("Errore: nodo stato non trovato","danger"); return; }
   const data = snap.val();
 
-  if(codiceInserito == data.codice){
+  if(codiceInserito === data.codice){
     const nuovoStato = !data.attivita;
     await set(statoRef, {...data, attivita: nuovoStato});
     showAlert(`Modalità offline ${(nuovoStato ? "attivata" : "disattivata")}`);
     updateStatusIndicator(nuovoStato);
+    bootstrap.Modal.getInstance(document.getElementById("codiceModal")).hide();
   } else {
     showAlert("Codice errato!","danger");
   }
