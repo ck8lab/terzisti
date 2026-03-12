@@ -38,7 +38,7 @@ footer a{color:#ffcc00;text-decoration:none;}
   <div class="search-container">
     <div class="input-group mb-3">
       <span class="input-group-text"><i class="bi bi-search"></i></span>
-      <input type="text" id="searchInput" class="form-control" placeholder="Cerca per nome (codice o descrizione)...">
+      <input type="text" id="searchInput" class="form-control" placeholder="Cerca per codice o descrizione...">
     </div>
   </div>
 
@@ -217,7 +217,9 @@ onValue(magazzinoRef, (snap) => {
   if (snap.exists()) {
     const data = snap.val();
     Object.keys(data).forEach(id => {
-      currentData.push({ ...data[id], id });
+      if (data[id]) {
+        currentData.push({ ...data[id], id });
+      }
     });
   }
   filterAndRender();
@@ -225,10 +227,12 @@ onValue(magazzinoRef, (snap) => {
 
 // Filtro e Render
 function filterAndRender() {
-  const search = document.getElementById("searchInput").value.toLowerCase();
+  const searchInput = document.getElementById("searchInput");
+  if (!searchInput) return;
+  const search = searchInput.value.toLowerCase().trim();
   const filtered = currentData.filter(item => 
-    (item.codice || "").toLowerCase().includes(search) || 
-    (item.descrizione || "").toLowerCase().includes(search)
+    String(item.codice || "").toLowerCase().includes(search) || 
+    String(item.descrizione || "").toLowerCase().includes(search)
   );
   renderTable(filtered);
 }
