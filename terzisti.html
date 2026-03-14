@@ -58,6 +58,17 @@ const auth = getAuth(app);
 const terzistiListRef = ref(db,"terzistiList");
 const statoRef = ref(db,"stato");
 
+const CACHE_KEY = "cache_terzisti_list_admin";
+
+function getCache() {
+  const cached = localStorage.getItem(CACHE_KEY);
+  return cached ? JSON.parse(cached) : null;
+}
+
+function setCache(data) {
+  localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+}
+
 // Nascondi contenuto fino a verifica stato
 document.documentElement.style.display = "none";
 
@@ -93,11 +104,26 @@ function showAlert(msg,type="success"){
 
 // Carica lista terzisti
 async function loadTerzistiList(){
+  const cached = getCache();
+  if(cached) renderTerzistiList(cached);
+
   const snap=await get(terzistiListRef);
+  if(snap.exists()){
+    const data = snap.val();
+    setCache(data);
+    renderTerzistiList(data);
+  } else {
+    const ul=document.getElementById("listTerzisti");
+    ul.innerHTML=`<li class="list-group-item text-muted">Nessun terzista presente</li>`;
+    setCache(null);
+  }
+}
+
+function renderTerzistiList(data){
   const ul=document.getElementById("listTerzisti");
+  if(!data){ ul.innerHTML=`<li class="list-group-item text-muted">Nessun terzista presente</li>`; return; }
+  
   ul.innerHTML="";
-  if(!snap.exists()){ ul.innerHTML=`<li class="list-group-item text-muted">Nessun terzista presente</li>`; return; }
-  const data=snap.val();
   Object.keys(data).sort().forEach(name=>{
     const li=document.createElement("li");
     li.className="list-group-item d-flex justify-content-between align-items-center";

@@ -16,9 +16,11 @@
   body { display: flex; flex-direction: column; background: #f0f2f5; }
   .navbar { background-color: var(--dark-bg) !important; box-shadow: 0 2px 4px rgba(0,0,0,.1); }
   .hero-section {
-    background: linear-gradient(135deg, #1a1a1a 0%, #333 100%);
+    background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('curva.webp');
+    background-size: cover;
+    background-position: center;
     color: white;
-    padding: 60px 0;
+    padding: 100px 0;
     text-align: center;
     margin-bottom: 40px;
     border-bottom: 5px solid var(--secondary-color);
@@ -56,6 +58,7 @@
   
   footer { background: var(--dark-bg); color: #fff; text-align: center; padding: 1.5rem; margin-top: auto; }
   footer a { color: var(--secondary-color); text-decoration: none; }
+  .shadow-text { text-shadow: 2px 2px 8px rgba(0,0,0,0.8); }
 </style>
 </head>
 <body>
@@ -72,8 +75,8 @@
 <div style="margin-top: 56px;">
   <section class="hero-section">
     <div class="container">
-      <h1 class="display-4 fw-bold mb-3">Ciao Pa Sei Nel Pannello di Controllo</h1>
-      <p class="lead">Seleziona la sezione per iniziare la gestione</p>
+      <h1 class="display-4 fw-bold mb-3 shadow-text">Ciao Pa Sei Nel Pannello di Controllo</h1>
+      <p class="lead mb-4 shadow-text">Seleziona la sezione per iniziare la gestione</p>
     </div>
   </section>
 

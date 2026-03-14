@@ -38,7 +38,7 @@ footer a{color:#ffcc00;text-decoration:none;}
   <div class="search-container">
     <div class="input-group mb-3">
       <span class="input-group-text"><i class="bi bi-search"></i></span>
-      <input type="text" id="searchInput" class="form-control" placeholder="Cerca per codice o descrizione...">
+      <input type="text" id="searchInput" class="form-control" placeholder="Cerca per codice, ubicazione o descrizione...">
     </div>
   </div>
 
@@ -123,9 +123,25 @@ const auth = getAuth(app);
 const magazzinoRef = ref(db, "magazzino_cartoni");
 const statoRef = ref(db, "stato");
 
-let currentData = [];
+const CACHE_KEY = "cache_magazzino_cartoni";
+
+function getCache() {
+  const cached = localStorage.getItem(CACHE_KEY);
+  return cached ? JSON.parse(cached) : null;
+}
+
+function setCache(data) {
+  localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+}
+
+let currentData = getCache() || [];
 let sortColumn = 'codice';
 let sortDirection = 'asc';
+
+// Se abbiamo dati in cache, renderizziamo subito
+if (currentData.length > 0) {
+  setTimeout(() => filterAndRender(), 0);
+}
 
 // Nascondi tutto fino a verifica offline
 document.documentElement.style.display = "none";
@@ -213,15 +229,17 @@ function renderTable(dataToRender) {
 
 // Listener per aggiornamenti real-time
 onValue(magazzinoRef, (snap) => {
-  currentData = [];
+  const newData = [];
   if (snap.exists()) {
     const data = snap.val();
     Object.keys(data).forEach(id => {
       if (data[id]) {
-        currentData.push({ ...data[id], id });
+        newData.push({ ...data[id], id });
       }
     });
   }
+  currentData = newData;
+  setCache(currentData);
   filterAndRender();
 });
 
@@ -232,6 +250,7 @@ function filterAndRender() {
   const search = searchInput.value.toLowerCase().trim();
   const filtered = currentData.filter(item => 
     String(item.codice || "").toLowerCase().includes(search) || 
+    String(item.ubicazione || "").toLowerCase().includes(search) || 
     String(item.descrizione || "").toLowerCase().includes(search)
   );
   renderTable(filtered);
@@ -239,6 +258,16 @@ function filterAndRender() {
 
 // Event Listeners
 document.getElementById("searchInput").addEventListener("input", filterAndRender);
+
+// Funzione per forzare il maiuscolo su CODICE e UBICAZIONE
+["codice", "ubicazione"].forEach(id => {
+  const input = document.getElementById(id);
+  if (input) {
+    input.addEventListener("input", (e) => {
+      e.target.value = e.target.value.toUpperCase();
+    });
+  }
+});
 
 // Funzioni globali per bottoni inline
 window.sortTable = (column) => {

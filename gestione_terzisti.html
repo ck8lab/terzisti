@@ -99,6 +99,19 @@ const datiRef = ref(db,"terzisti");
 const terzistiListRef = ref(db,"terzistiList");
 const statoRef = ref(db,"stato");
 
+// Cache Helpers
+const CACHE_KEY_TERZISTI = "cache_terzisti_list";
+const CACHE_KEY_DATI = "cache_terzisti_data";
+
+function getCache(key) {
+  const cached = localStorage.getItem(key);
+  return cached ? JSON.parse(cached) : null;
+}
+
+function setCache(key, data) {
+  localStorage.setItem(key, JSON.stringify(data));
+}
+
 // Nascondi tutto fino a verifica offline
 document.documentElement.style.display = "none";
 
@@ -132,19 +145,45 @@ function showAlert(msg,type="success"){
 
 // Carica terzisti per select
 async function loadTerzistiSelect(){
+  const cached = getCache(CACHE_KEY_TERZISTI);
+  if(cached) renderTerzistiSelect(cached);
+
   const snap = await get(terzistiListRef);
+  if(snap.exists()){
+    const data = snap.val();
+    setCache(CACHE_KEY_TERZISTI, data);
+    renderTerzistiSelect(data);
+  }
+}
+
+function renderTerzistiSelect(data) {
   const sel = document.getElementById("terzista");
   sel.innerHTML = `<option value="">---</option>`;
-  if(snap.exists()) Object.keys(snap.val()).forEach(t=> sel.innerHTML+=`<option value="${t}">${t}</option>`);
+  Object.keys(data).forEach(t=> sel.innerHTML+=`<option value="${t}">${t}</option>`);
 }
 
 // Carica dati tabella
 async function loadTables(){
+  const cached = getCache(CACHE_KEY_DATI);
+  if(cached) renderTables(cached);
+
   const snap=await get(datiRef);
+  if(snap.exists()){
+    const data = snap.val();
+    setCache(CACHE_KEY_DATI, data);
+    renderTables(data);
+  } else {
+    const div=document.getElementById("tables-container");
+    div.innerHTML=`<div class="empty-placeholder">Nessun dato disponibile</div>`;
+    setCache(CACHE_KEY_DATI, null);
+  }
+}
+
+function renderTables(data) {
   const div=document.getElementById("tables-container");
+  if(!data){ div.innerHTML=`<div class="empty-placeholder">Nessun dato disponibile</div>`; return; }
+  
   div.innerHTML="";
-  if(!snap.exists()){ div.innerHTML=`<div class="empty-placeholder">Nessun dato disponibile</div>`; return; }
-  const data=snap.val();
   const grouped={};
   Object.keys(data).forEach(id=>{
     const row=data[id];
@@ -155,7 +194,8 @@ async function loadTables(){
   Object.keys(grouped).sort().forEach(t=>{
     let html=`<div class="card mb-3"><div class="card-body d-flex justify-content-between align-items-center"><h5>${t}</h5>
     <button class="btn btn-sm btn-danger" onclick="deleteTerzista('${t}')">🗑 Elimina Tutti i Dati</button></div>
-    <table class="table table-striped table-responsive"><thead><tr>
+    <div class="table-responsive">
+    <table class="table table-striped"><thead><tr>
     <th>ODL</th><th>Pezzi</th><th>Gabbie</th><th>Descrizione</th><th>Stato</th><th>Azioni</th>
     </tr></thead><tbody>`;
     grouped[t].forEach(r=>{
@@ -170,7 +210,7 @@ async function loadTables(){
         <button class="btn btn-sm btn-danger" onclick="deleteRow('${r.id}')">🗑</button>
       </div></td></tr>`;
     });
-    html+=`</tbody></table></div>`;
+    html+=`</tbody></table></div></div>`;
     div.innerHTML+=html;
   });
 }
